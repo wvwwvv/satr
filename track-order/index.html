@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050505">
+<meta name="robots" content="noindex">
+<title>تتبّع الطلب | سَطِر</title>
+<link rel="stylesheet" href="../assets/fonts.css">
+<link rel="stylesheet" href="../assets/pages.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5v-5h4v5"/></symbol>
+</svg>
+
+<div class="wrap">
+  <header class="top">
+    <a href="../" aria-label="سَطِر"><img src="../assets/logo.png" alt="سَطِر" width="640" height="262"></a>
+    <a class="back" href="../"><svg class="ic"><use href="#i-home"/></svg>الموقع الرئيسي</a>
+  </header>
+
+  <h1>تتبّع طلبك</h1>
+  <p class="sub">اكتب رقم التتبع الذي ظهر لك بعد إرسال الطلب، ورقم الهاتف الذي استخدمته.</p>
+
+  <form id="f" class="glass" novalidate>
+    <div class="fld"><label for="code">رقم التتبع</label>
+      <input id="code" type="text" dir="ltr" placeholder="SATR-XXXXXX" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20"></div>
+    <div class="fld"><label for="phone">رقم الهاتف</label>
+      <input id="phone" type="tel" inputmode="tel" dir="ltr" placeholder="05xxxxxxxx" autocomplete="tel"></div>
+    <p class="err" id="err" role="alert" hidden></p>
+    <button class="btn solid full" type="submit" id="go">تتبّع الطلب</button>
+  </form>
+
+  <section class="res" id="res" hidden aria-live="polite"></section>
+  <p class="hint" id="hint" hidden>تُحدَّث الحالة تلقائياً كل دقيقة.</p>
+</div>
+
+<script src="../assets/config.js"></script>
+<script src="../assets/satr-api.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var f = $('#f'), codeEl = $('#code'), phoneEl = $('#phone'), errEl = $('#err'), go = $('#go'), res = $('#res'), hint = $('#hint');
+  var current = null, timer = null;
+
+  function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+  function digits(s) { return s.replace(/[٠-٩]/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(d); }); }
+  function when(iso) { try { return new Date(iso).toLocaleString('ar', { dateStyle: 'medium', timeStyle: 'short' }); } catch (e) { return ''; } }
+  function money(t) { return t == null ? 'حسب الاتفاق' : t + ' شيكل'; }
+  function showErr(m) { errEl.textContent = m || ''; errEl.hidden = !m; }
+
+  /* تعبئة تلقائية: الرقم من الرابط، والهاتف من طلبات هذا الجهاز */
+  var q = new URLSearchParams(location.search), qc = (q.get('code') || '').toUpperCase().slice(0, 20);
+  if (qc) {
+    codeEl.value = qc;
+    try {
+      var saved = JSON.parse(localStorage.getItem('satr.orders') || '[]') || [];
+      for (var i = 0; i < saved.length; i++) if (saved[i].code === qc && saved[i].phone) { phoneEl.value = saved[i].phone; break; }
+    } catch (e) {}
+  }
+
+  function render(o) {
+    res.textContent = '';
+    var card = el('div', 'glass'), head = el('div', 'res-head');
+    var l = el('div'); l.appendChild(el('span', 'help', 'رقم التتبع')); l.appendChild(el('div', 'code-lg num', o.code));
+    head.appendChild(l);
+    var cancelled = o.status === 'cancelled';
+    head.appendChild(el('span', 'chip ' + (cancelled ? 'bad' : 'on'), SATR.statusLabel(o.status, o.delivery_method)));
+    card.appendChild(head);
+
+    var kv = el('div', 'kv'); kv.style.margin = '14px 0 4px';
+    [['المنتج', o.product_name], ['الكمية', String(o.qty)], ['السعر التقديري', money(o.total)],
+     ['طريقة الاستلام', o.delivery_method === 'pickup' ? 'استلام شخصي' : 'توصيل'], ['تاريخ الطلب', when(o.created_at)]].forEach(function (p) {
+      var d = el('div'); d.appendChild(el('span', null, p[0])); d.appendChild(el('b', null, p[1])); kv.appendChild(d);
+    });
+    card.appendChild(kv); res.appendChild(card);
+
+    var events = o.events || [], last = {};
+    events.forEach(function (e) { last[e.status] = e; });
+
+    var tcard = el('div', 'glass');
+    if (cancelled) {
+      var b = el('div', 'big'); b.appendChild(el('strong', null, 'تم إلغاء هذا الطلب'));
+      var ce = last.cancelled; if (ce && ce.note) b.appendChild(el('p', 'help', ce.note));
+      b.appendChild(el('p', 'help', 'للاستفسار تواصل معنا عبر واتساب.'));
+      tcard.appendChild(b);
+    } else {
+      var steps = SATR.flow(o.delivery_method), cur = steps.indexOf(o.status), ul = el('ul', 'tl');
+      steps.forEach(function (s, n) {
+        var li = el('li', n < cur ? 'done' : n === cur ? 'cur' : 'todo');
+        if (n === cur) li.setAttribute('aria-current', 'step');
+        var dot = el('span', 'dot');
+        if (n <= cur) { dot.innerHTML = '<svg class="ic"><use href="#i-check"/></svg>'; }
+        var body = el('div'); body.appendChild(el('h4', null, SATR.statusLabel(s, o.delivery_method)));
+        var ev = last[s];
+        if (ev) { body.appendChild(el('p', null, when(ev.at))); if (ev.note) body.appendChild(el('p', 'note', ev.note)); }
+        li.appendChild(dot); li.appendChild(body); ul.appendChild(li);
+      });
+      tcard.appendChild(ul);
+    }
+    res.appendChild(tcard);
+
+    if (events.length > 1) {
+      var h = el('div', 'glass hist'); h.appendChild(el('h3', null, 'سجل التحديثات'));
+      events.slice().reverse().forEach(function (e) {
+        var r = el('div'); r.appendChild(el('span', null, SATR.statusLabel(e.status, o.delivery_method) + (e.note ? ' — ' + e.note : '')));
+        r.appendChild(el('span', null, when(e.at))); h.appendChild(r);
+      });
+      res.appendChild(h);
+    }
+    res.hidden = false; hint.hidden = cancelled || o.status === 'delivered';
+  }
+
+  function lookup(silent) {
+    var code = codeEl.value.trim().toUpperCase(), phone = digits(phoneEl.value.trim());
+    if (!silent) showErr('');
+    if (code.length < 6 || phone.replace(/\D/g, '').length < 9) { showErr('الرجاء إدخال رقم التتبع ورقم الهاتف كاملَين.'); return; }
+    if (!SATR.configured()) { showErr('خدمة التتبع غير مفعّلة بعد. تواصل معنا عبر واتساب لمعرفة حالة طلبك.'); return; }
+    if (!silent) { go.disabled = true; go.textContent = 'جارٍ البحث…'; }
+    SATR.trackOrder(code, phone).then(function (o) {
+      go.disabled = false; go.textContent = 'تتبّع الطلب';
+      if (!o) { if (!silent) { res.hidden = true; hint.hidden = true; showErr('لم نجد طلباً بهذه البيانات. تأكد من رقم التتبع ومن الهاتف الذي استخدمته عند الطلب.'); } return; }
+      showErr(''); current = { code: code, phone: phone }; render(o);
+      try { history.replaceState(null, '', '?code=' + encodeURIComponent(o.code)); } catch (e) {}
+      clearInterval(timer); timer = setInterval(function () { if (!document.hidden && current) lookup(true); }, 60000);
+    }, function (e) {
+      go.disabled = false; go.textContent = 'تتبّع الطلب';
+      if (!silent) showErr(SATR.errorMessage(e));
+    });
+  }
+  f.addEventListener('submit', function (e) { e.preventDefault(); lookup(false); });
+  codeEl.addEventListener('input', function () { codeEl.value = codeEl.value.toUpperCase(); });
+  if (codeEl.value && phoneEl.value) lookup(false);
+})();
+</script>
+</body>
+</html>
