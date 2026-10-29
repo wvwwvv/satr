@@ -118,13 +118,25 @@
     session: getSession,
     signIn: function (email, password) {
       return raw('/auth/v1/token?grant_type=password', { method: 'POST', body: { email: email, password: password } })
-        .then(function (j) { saveToken(j, email); return authed('/rest/v1/admins?select=user_id'); })
-        .then(function (rows) {
-          if (!rows || !rows.length) { setSession(null); throw SatrError('not_admin', 403); }
-          return getSession();
+        .then(function (j) {
+          saveToken(j, email);
+          return authed('/rest/v1/admins?select=user_id').then(function (rows) {
+            if (!rows || !rows.length) { setSession(null); throw SatrError('not_admin', 403); }
+            return getSession();
+          }, function (e) {
+            setSession(null);
+            if (e.code === 'network') throw e;
+            var x = SatrError('setup', e.status);
+            x.message = 'تم تسجيل الدخول لكن تعذّر قراءة قاعدة البيانات (رمز ' + (e.status || '؟') + '). غالباً لم يُنفَّذ ملف setup.sql بنجاح بعد.';
+            throw x;
+          });
         }, function (e) {
-          if (e.code === 'unknown' || e.code === 'not_admin') { var x = SatrError('unknown'); x.message = 'البريد أو كلمة المرور غير صحيحة.'; x.code = 'bad_login'; throw x; }
-          throw e;
+          if (e.code === 'network') throw e;
+          var d = String(e.detail || ''), x = SatrError('bad_login', e.status);
+          if (/not confirmed/i.test(d)) x.message = 'الحساب غير مؤكَّد. من Supabase ← Authentication ← Users فعّل تأكيد الحساب (Confirm user).';
+          else if (/invalid login/i.test(d)) x.message = 'البريد أو كلمة المرور غير صحيحة.';
+          else x.message = 'تعذّر تسجيل الدخول (' + (e.status || '؟') + (d ? ': ' + d : '') + ').';
+          throw x;
         });
     },
     check: function () {
