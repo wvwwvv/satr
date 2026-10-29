@@ -62,30 +62,30 @@ main{position:relative;z-index:2}
 @media (prefers-reduced-transparency:reduce){.glass,.card,.contact,.offer,.srow,.sheet,.btn.ghost,.tag{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:#161616!important}}
 
 /* ---------- floating dock (white glass capsule) ---------- */
-.dock{position:fixed;z-index:50;top:calc(env(safe-area-inset-top,0px) + 12px);left:0;right:0;margin-inline:auto;width:fit-content;max-width:calc(100% - 24px);
-  display:flex;align-items:center;gap:4px;padding:8px;border-radius:999px;
+.dock{position:fixed;z-index:50;top:calc(env(safe-area-inset-top,0px) + 6px);left:0;right:0;margin-inline:auto;width:calc(100% - 20px);max-width:680px;
+  display:flex;align-items:center;justify-content:space-between;gap:0;padding:4px 10px;border-radius:999px;
   background:linear-gradient(180deg,rgba(255,255,255,.97),rgba(236,236,236,.86));
   -webkit-backdrop-filter:blur(24px) saturate(190%);backdrop-filter:blur(24px) saturate(190%);
   box-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 rgba(0,0,0,.1),0 0 0 1px rgba(255,255,255,.55),0 16px 44px rgba(0,0,0,.6),0 2px 8px rgba(0,0,0,.4);
   animation:dockIn .95s cubic-bezier(.2,.8,.2,1) .25s both}
 .intro-on .dock{animation-delay:2.7s}
 @keyframes dockIn{from{opacity:0;transform:translateY(-130%)}to{opacity:1;transform:none}}
-.dock::before{content:"";position:absolute;inset:1px 14px auto 14px;height:46%;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,0));opacity:.7;pointer-events:none}
-.ni{position:relative;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#0a0a0a;
+.dock::before{content:"";position:absolute;inset:1px 18px auto 18px;height:42%;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,0));opacity:.7;pointer-events:none}
+.ni{position:relative;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:#0a0a0a;
   transition:background .35s,color .35s,transform .35s cubic-bezier(.2,.8,.2,1)}
-.ni .ic{width:22px;height:22px;stroke-width:1.7;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.ni .ic{width:20px;height:20px;stroke-width:1.7;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
 .ni:hover .ic{transform:translateY(-2px) scale(1.14)}
 .ni:active{transform:scale(.92)}
 .ni.on{background:#0a0a0a;color:#fff;box-shadow:0 6px 16px rgba(0,0,0,.35)}
-.ni::after{content:attr(data-tip);position:absolute;top:calc(100% + 14px);left:50%;transform:translate(-50%,-4px);white-space:nowrap;
+.ni::after{content:attr(data-tip);position:absolute;top:calc(100% + 12px);left:50%;transform:translate(-50%,-4px);white-space:nowrap;
   padding:5px 12px;border-radius:999px;background:rgba(10,10,10,.88);color:#fff;font-size:.8rem;line-height:1.6;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;
   -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 @media (hover:hover) and (pointer:fine){.ni:hover::after,.ni:focus-visible::after{opacity:1;transform:translate(-50%,0)}}
-.dsep{width:1px;height:22px;background:rgba(0,0,0,.18);margin-inline:4px;flex:none}
+.dsep{width:1px;height:18px;background:rgba(0,0,0,.18);margin-inline:2px;flex:none}
 .badge{position:absolute;top:1px;inset-inline-end:0;min-width:18px;height:18px;border-radius:999px;background:#0a0a0a;color:#fff;font-size:.68rem;font-weight:600;display:grid;place-items:center;padding-inline:4px;line-height:1;font-variant-numeric:tabular-nums;box-shadow:0 0 0 2px #f2f2f2}
 .ni.on .badge{background:#fff;color:#0a0a0a;box-shadow:0 0 0 2px #0a0a0a}
 .badge[hidden]{display:none!important}
-@media (max-width:380px){.ni{width:40px;height:40px}.dock{gap:2px;padding:6px}}
+@media (max-width:380px){.ni{width:36px;height:36px}.dock{padding:4px 8px}}
 
 /* ---------- fixed 3D NFC card ---------- */
 .cardlayer{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden}
@@ -383,7 +383,7 @@ select option{background:#1a1a1a;color:#f5f5f5}
 
 <nav class="dock" id="dock" aria-label="التنقل الرئيسي">
   <a class="ni" href="#home" data-s="home" data-tip="الرئيسية" aria-label="الرئيسية"><svg class="ic"><use href="#i-home"/></svg></a>
-  <a class="ni" href="#nfc" data-s="nfc" data-tip="بطاقات NFC" aria-label="بطاقات NFC"><svg class="ic"><use href="#i-nfc"/></svg></a>
+  <a class="ni" href="#story" data-s="nfc" data-tip="بطاقات NFC" aria-label="بطاقات NFC"><svg class="ic"><use href="#i-nfc"/></svg></a>
   <a class="ni" href="#services" data-s="services" data-tip="خدماتنا" aria-label="خدماتنا"><svg class="ic"><use href="#i-layers"/></svg></a>
   <a class="ni" href="#products" data-s="products" data-tip="المنتجات والطلب" aria-label="المنتجات والطلب"><svg class="ic"><use href="#i-box"/></svg></a>
   <a class="ni" href="#contact" data-s="contact" data-tip="تواصل معنا" aria-label="تواصل معنا"><svg class="ic"><use href="#i-chat"/></svg></a>
@@ -406,21 +406,6 @@ select option{background:#1a1a1a;color:#f5f5f5}
     </div>
   </div>
   <div class="hint rise" style="--i:6" id="hint"><span>مرّر</span><i></i></div>
-</section>
-
-<section class="idea" id="nfc" data-sec="nfc">
-  <div class="wrap">
-    <div class="idea-in">
-      <h2 class="rv">فكرة مشروعنا<br><span class="dim">وماذا نقدم؟</span></h2>
-      <p class="rv" style="--d:.06s">تقوم فكرة سَطِر على دمج العالم الرقمي بالواقع المادي بطريقة ذكية وسلسة. نحن لا نقتصر على تقديم بطاقات ودروع تقليدية، بل نصنع <b>منظومة ربط متكاملة</b>: نبرمج ونصمم مواقع إلكترونية متكاملة للزبائن، ثم نربطها تقنياً بشرائح <b>NFC</b> المدمجة داخل بطاقات الأعمال أو الدروع المكتبية (CNC وأكريليك).</p>
-      <p class="rv" style="--d:.12s">بمجرد تمرير الهاتف الذكي على البطاقة أو الدرع، يفتح الموقع الإلكتروني فوراً على الهاتف دون الحاجة إلى تطبيقات إضافية.</p>
-      <ul class="offer rv" style="--d:.18s">
-        <li><svg class="ic"><use href="#i-code"/></svg><span>برمجة وتصميم مواقع إلكترونية احترافية للشركات والأفراد.</span></li>
-        <li><svg class="ic"><use href="#i-nfc"/></svg><span>منتجات NFC: بطاقات أعمال، ودروع مكتبية بتقنية CNC، ودروع أكريليك.</span></li>
-        <li><svg class="ic"><use href="#i-globe"/></svg><span>خيارات طلب مرنة: تصميم الموقع كاملاً لدينا، أو ربط المنتج برابط موقع جاهز لديك.</span></li>
-      </ul>
-    </div>
-  </div>
 </section>
 
 <section class="story" id="story" data-sec="nfc" aria-label="كيف تعمل البطاقة">
@@ -447,9 +432,24 @@ select option{background:#1a1a1a;color:#f5f5f5}
   </div>
 </section>
 
+<section class="idea" id="idea" data-sec="nfc">
+  <div class="wrap">
+    <div class="idea-in">
+      <h2 class="rv">فكرة مشروعنا<br><span class="dim">وماذا نقدم؟</span></h2>
+      <p class="rv" style="--d:.06s">تقوم فكرة سَطِر على دمج العالم الرقمي بالواقع المادي بطريقة ذكية وسلسة. نحن لا نقتصر على تقديم بطاقات ودروع تقليدية، بل نصنع <b>منظومة ربط متكاملة</b>: نبرمج ونصمم مواقع إلكترونية متكاملة للزبائن، ثم نربطها تقنياً بشرائح <b>NFC</b> المدمجة داخل بطاقات الأعمال أو الدروع المكتبية (CNC وأكريليك).</p>
+      <p class="rv" style="--d:.12s">بمجرد تمرير الهاتف الذكي على البطاقة أو الدرع، يفتح الموقع الإلكتروني فوراً على الهاتف دون الحاجة إلى تطبيقات إضافية.</p>
+      <ul class="offer rv" style="--d:.18s">
+        <li><svg class="ic"><use href="#i-code"/></svg><span>برمجة وتصميم مواقع إلكترونية احترافية للشركات والأفراد.</span></li>
+        <li><svg class="ic"><use href="#i-nfc"/></svg><span>منتجات NFC: بطاقات أعمال، ودروع مكتبية بتقنية CNC، ودروع أكريليك.</span></li>
+        <li><svg class="ic"><use href="#i-globe"/></svg><span>خيارات طلب مرنة: تصميم الموقع كاملاً لدينا، أو ربط المنتج برابط موقع جاهز لديك.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
 <section class="sec" id="services" data-sec="services">
   <div class="wrap">
-    <div class="sec-head rv"><h2>خدماتنا <span class="dim">التقنية المتكاملة</span></h2></div>
+    <div class="sec-head rv"><h2>خدماتنا التقنية المتكاملة</h2></div>
     <div class="rows">
       <article class="srow rv"><div class="ico"><svg class="ic"><use href="#i-code"/></svg></div><h3>برمجة وتطوير المواقع</h3><p>تصميم وتطوير مواقع إلكترونية احترافية مخصصة بالكامل حسب طلب الزبون وحاجته وبأحدث التقنيات.</p></article>
       <article class="srow rv" style="--d:.08s"><div class="ico"><svg class="ic"><use href="#i-nfc"/></svg></div><h3>أنظمة وربط NFC</h3><p>دمج وبرمجة شرائح التفاعل القريب (NFC) للمنتجات والبطاقات الذكية لتجربة تفاعلية مذهلة.</p></article>
@@ -517,11 +517,11 @@ select option{background:#1a1a1a;color:#f5f5f5}
 <section class="end" id="contact" data-sec="contact">
   <div class="wrap">
     <div class="contact rv">
-      <h2>تواصل <span class="dim">معنا</span></h2>
+      <h2>تواصل معنا</h2>
       <p>للاستفسارات الخاصة والطلبات المخصصة لخدمات برمجة وتصميم مواقع الويب والدروع الذكية، يسعدنا تواصلكم معنا مباشرة:</p>
       <div class="cta-row" style="justify-content:center">
         <a class="btn solid" href="https://wa.me/972566027617" target="_blank" rel="noopener"><svg class="ic"><use href="#i-wa"/></svg>واتساب</a>
-        <a class="btn ghost" href="https://www.instagram.com/des_program?igsi=YXc0emN3bW9qc3M1" target="_blank" rel="noopener"><svg class="ic"><use href="#i-ig"/></svg>انستغرام</a>
+        <a class="btn ghost" href="https://www.instagram.com/saatr.ps" target="_blank" rel="noopener"><svg class="ic"><use href="#i-ig"/></svg>انستغرام</a>
         <a class="btn ghost" href="track-order/"><svg class="ic"><use href="#i-box"/></svg>تتبّع طلبك</a>
       </div>
       <span class="num">+972 56 602 7617</span>
@@ -616,7 +616,7 @@ select option{background:#1a1a1a;color:#f5f5f5}
     storyTop=pageTop(story);
     stops=[
       {y:0,p:P.pre},
-      {y:storyTop-.5*VH,p:P.pre},
+      {y:Math.max(1,storyTop-.95*VH),p:P.pre},
       {y:storyTop,p:P.s1},
       {y:storyTop+VH,p:P.s2},
       {y:storyTop+2*VH,p:P.s3},
