@@ -96,16 +96,27 @@ main{position:relative;z-index:2}
 .ni .ic{width:20px;height:20px;stroke-width:1.7;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
 .ni:hover .ic{transform:translateY(-2px) scale(1.14)}
 .ni:active{transform:scale(.92)}
-.ni.on{background:#0a0a0a;color:#fff;box-shadow:0 6px 16px rgba(0,0,0,.35)}
+.ni.on{color:#0a0a0a}
+.ni.on .ic{stroke-width:2.15}
 .ni::after{content:attr(data-tip);position:absolute;top:calc(100% + 12px);left:50%;transform:translate(-50%,-4px);white-space:nowrap;
   padding:5px 12px;border-radius:999px;background:rgba(10,10,10,.88);color:#fff;font-size:.8rem;line-height:1.6;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;
   -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 @media (hover:hover) and (pointer:fine){.ni:hover::after,.ni:focus-visible::after{opacity:1;transform:translate(-50%,0)}}
 .dsep{width:1px;height:18px;background:rgba(0,0,0,.18);margin-inline:2px;flex:none}
 .badge{position:absolute;top:1px;inset-inline-end:0;min-width:18px;height:18px;border-radius:999px;background:#0a0a0a;color:#fff;font-size:.68rem;font-weight:600;display:grid;place-items:center;padding-inline:4px;line-height:1;font-variant-numeric:tabular-nums;box-shadow:0 0 0 2px #f2f2f2}
-.ni.on .badge{background:#fff;color:#0a0a0a;box-shadow:0 0 0 2px #0a0a0a}
 .badge[hidden]{display:none!important}
 @media (max-width:380px){.ni{width:36px;height:36px}.dock{padding:4px 8px}}
+/* spotlight beam from the dock's top edge: follows the pointer on PC, and falls on the tapped icon on phones */
+.dock-clip{position:absolute;inset:0;border-radius:inherit;overflow:hidden;pointer-events:none}
+.spot{position:absolute;top:0;left:0;height:100%;width:66px;opacity:0;transform:translateX(var(--sx,0px));
+  transition:transform .5s cubic-bezier(.2,.8,.2,1),opacity .35s ease}
+.spot.on{opacity:1}
+.spot::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.36),rgba(0,0,0,.1) 55%,rgba(0,0,0,0) 96%);
+  clip-path:polygon(33% 0,67% 0,100% 100%,0 100%);filter:blur(1.5px)}
+.spot::after{content:"";position:absolute;top:0;left:50%;width:24px;margin-left:-12px;height:3px;border-radius:0 0 5px 5px;background:#0a0a0a;
+  box-shadow:0 3px 10px rgba(0,0,0,.5),0 0 14px rgba(0,0,0,.25)}
+@media (max-width:720px){.spot{width:56px}.spot::after{width:20px;margin-left:-10px}}
+
 
 /* ---------- fixed 3D NFC card ---------- */
 .cardlayer{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden}
@@ -447,6 +458,7 @@ select option{background:#1a1a1a;color:#f5f5f5}
 </div>
 
 <nav class="dock" id="dock" aria-label="التنقل الرئيسي">
+  <span class="dock-clip" aria-hidden="true"><i class="spot"></i></span>
   <a class="ni" href="#home" data-s="home" data-tip="الرئيسية" aria-label="الرئيسية"><svg class="ic"><use href="#i-home"/></svg></a>
   <a class="ni" href="#story" data-s="nfc" data-tip="بطاقات NFC" aria-label="بطاقات NFC"><svg class="ic"><use href="#i-nfc"/></svg></a>
   <a class="ni" href="#services" data-s="services" data-tip="خدماتنا" aria-label="خدماتنا"><svg class="ic"><use href="#i-layers"/></svg></a>
@@ -882,9 +894,38 @@ select option{background:#1a1a1a;color:#f5f5f5}
     var co=new IntersectionObserver(function(es){var n=0;es.forEach(function(en){if(en.isIntersecting){var el=en.target;el.style.setProperty('--d',(n*.13).toFixed(2)+'s');n++;el.classList.remove('cpre');el.classList.add('cin');co.unobserve(el);}});},{threshold:.2,rootMargin:'0px 0px -8% 0px'});
     $$('#products .card').forEach(function(el){var r=el.getBoundingClientRect();if(r.top>innerHeight*.9){el.classList.add('cpre');co.observe(el);}});
   }
-  var links=$$('.dock a.ni');
+  /* dock: a spotlight beam marks the active icon and stays on it. On PC it follows the pointer and returns to the active icon;
+     on touch it lands on the tapped icon (the page then scrolls to that section and the beam stays there). */
+  var links=$$('.dock a.ni'),dock=$('#dock'),spot=dock&&dock.querySelector('.spot'),hovering=false,locking=false,lockT=null,hideT=null,touchAt=-9999;
+  function recentTouch(){return performance.now()-touchAt<1200;} /* ignore the synthetic mouse/focus events a tap produces */
+  function aim(a){
+    if(!spot)return;
+    var d=dock.getBoundingClientRect(),r=a.getBoundingClientRect(),x=r.left-d.left+r.width/2-spot.offsetWidth/2;
+    if(!spot.classList.contains('on')){spot.style.transition='none';spot.style.setProperty('--sx',x+'px');void spot.offsetWidth;spot.style.transition='';}
+    else spot.style.setProperty('--sx',x+'px');
+    spot.classList.add('on');
+  }
+  function rest(){ if(!spot||hovering)return; var a=dock.querySelector('a.ni.on'); if(a)aim(a); else spot.classList.remove('on'); }
+  function setActive(id){ links.forEach(function(a){a.classList.toggle('on',a.getAttribute('data-s')===id);}); rest(); }
+  function syncActive(){ var mid=innerHeight*.5,best=null; $$('[data-sec]').forEach(function(s){var r=s.getBoundingClientRect(); if(r.top<=mid&&r.bottom>mid)best=s;}); if(best)setActive(best.getAttribute('data-sec')); }
+  function unlock(){ locking=false; syncActive(); }
+  if(spot){
+    $$('#dock .ni').forEach(function(a){
+      a.addEventListener('mouseenter',function(){if(recentTouch())return;hovering=true;aim(a);});
+      a.addEventListener('focus',function(){if(recentTouch())return;hovering=true;aim(a);});
+      a.addEventListener('pointerdown',function(e){if(e.pointerType==='mouse')return;touchAt=performance.now();clearTimeout(hideT);hovering=true;aim(a);});
+      a.addEventListener('pointerup',function(e){if(e.pointerType==='mouse')return;touchAt=performance.now();clearTimeout(hideT);hideT=setTimeout(function(){hovering=false;rest();},700);});
+      a.addEventListener('pointercancel',function(e){if(e.pointerType==='mouse')return;touchAt=performance.now();clearTimeout(hideT);hideT=setTimeout(function(){hovering=false;rest();},200);});
+    });
+    dock.addEventListener('mouseleave',function(){if(recentTouch())return;hovering=false;rest();});
+    dock.addEventListener('focusout',function(){if(recentTouch())return;hovering=false;rest();});
+    window.addEventListener('resize',rest);
+  }
+  /* pressing a section icon makes it active at once; while the page scrolls there, the observer is paused so the beam does not hop across other icons */
+  links.forEach(function(a){a.addEventListener('click',function(){setActive(a.getAttribute('data-s'));locking=true;clearTimeout(lockT);lockT=setTimeout(unlock,1200);});});
+  window.addEventListener('scroll',function(){if(!locking)return;clearTimeout(lockT);lockT=setTimeout(unlock,180);},{passive:true});
   if('IntersectionObserver' in window){
-    var so=new IntersectionObserver(function(es){es.forEach(function(en){if(en.isIntersecting){var id=en.target.getAttribute('data-sec');links.forEach(function(a){a.classList.toggle('on',a.getAttribute('data-s')===id);});}});},{rootMargin:'-45% 0px -50% 0px'});
+    var so=new IntersectionObserver(function(es){es.forEach(function(en){if(en.isIntersecting&&!locking){setActive(en.target.getAttribute('data-sec'));}});},{rootMargin:'-45% 0px -50% 0px'});
     $$('[data-sec]').forEach(function(s){so.observe(s);});
   }
 })();
